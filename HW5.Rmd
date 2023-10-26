@@ -1,0 +1,60 @@
+---
+title: "HW5"
+author: "Hanxin Zheng"
+date: "2023-10-19"
+output: html_document
+---
+
+```{r}
+
+library(readxl)
+Fresh_Mango_Import_to_U_S_ <- read_excel("Fresh Mango Import to U.S..xlsx")
+
+library(fpp)
+library(fpp2)
+library(TTR)
+mango_ts=ts(Fresh_Mango_Import_to_U_S_$Vol, frequency=12, start=c(2018,1))
+mango_ts
+
+head(mango_ts)
+plot(mango_ts)
+Acf(mango_ts)
+#According to the significance level test, there are strong seasonality for every half years and the there is trend for the volume imported to the U.S. as well
+
+
+#Decomposition by Loess model
+stl_mango=stl(mango_ts,s.window = "periodic")
+stl_mango 
+# When the summer comes around June and July they have the most positive seasonality increasing the volume of mango imported to the U.S., and there are a overall decreasing trend of mango importation volume to the U.S.
+plot(stl_mango)
+#trend is the dominating factors affecting the data, which takes account of approximately 70% of data, while seasonality accounts for the rest 30% of the data
+attributes(stl_mango)
+sadj_mango= seasadj(stl_mango)
+plot(sadj_mango)
+#after seasonally adjusted the volume of mango imported to the U.S. we could see a clear decreasing trend of the importation volume from 2018 to 2022, especially since the mid of 2022 the volume has been more quickly dropped. And there are two sharp and big decrease at the beginning of 2020 when COVID started and after-mid of 2022.
+plot(mango_ts)
+lines(sadj_mango,col='red')
+fstl_mango=forecast(stl_mango)
+accuracy(fstl_mango)#MAPE is 10.39%
+Acf(fstl_mango$residuals)# There ate three month of data has the residuals over the significance level, meaning that the data is not random, other factors have come into places affecting the volume of mango imported to the U.S.
+fstl_mango$method# the forecast model use multiplicative in level, and none for trend and seasonality
+plot(mango_ts)
+lines(fstl_mango$fitted,col='red')
+
+
+#Decomposition by moving average
+decom_mango=decompose(mango_ts)
+decom_mango#it is using addictive model, and the seasonality is positive from April to August with June being the month with highest positive seasonality; while the trend is continuously going down from 2018 to 2022
+attributes(decom_mango)
+sadj2_mango=seasadj(decom_mango)
+plot(sadj2_mango)#After the adjusting the seasonality, the overall trend is going down with a big sharp at the beginning of 2020
+fdecom_mango=forecast(sadj2_mango)
+fdecom_mango
+accuracy(fdecom_mango)#MAPE is 9.12%
+plot(sadj2_mango)
+lines(fdecom_mango$fitted, col='red')# the prediction from decomposition by moving average forecast is downward trend
+
+
+###Decomposition using moving average has a MAPE of 9.12% which is better than decomposition using Loess with MAPE of 10.39% 
+
+```
